@@ -1,7 +1,6 @@
 #ifndef GPS_H
 #define GPS_H
 		
-#include <stdio.h>				// cin, cout
 #include <time.h>				// time_t
 #include <unistd.h>				// sleep (para imprimir todas as info do arquivo)
 #include <termios.h>                            // termios

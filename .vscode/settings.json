@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "server.h": "c",
+        "stdio.h": "c",
+        "dronestatus.h": "c",
+        "stdlib.h": "c",
+        "errno.h": "c",
+        "pthread.h": "c",
+        "in.h": "c",
+        "inet.h": "c",
+        "string.h": "c",
+        "signal.h": "c",
+        "Server.C": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}

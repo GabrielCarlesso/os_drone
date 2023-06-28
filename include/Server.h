@@ -30,11 +30,14 @@ void *client_commands_reader(void *argController) {
         pthread_mutex_lock(&controller->mutex_buffer_comandos);
         while((strlen(controller->buffer_comandos) + n) > sizeof(controller->buffer_comandos))
         {
-            printf("Buffer de comandos cheio");
+            printf("\nBuffer de comandos cheio\n");
             pthread_cond_wait(&controller->buffet_cheio, &controller->mutex_buffer_comandos);
         }
+        addCommandToBuffer(controller->buffer_comandos,buffer);
+        //printf("Buffer comando: %s",controller->buffer_comandos);
         pthread_mutex_unlock(&controller->mutex_buffer_comandos);
-
+        
+        
         if(strcmp(buffer,"Sair")==0){
             break;
         }
@@ -89,6 +92,7 @@ void initiateServer(int argc, char *argv[], Nodo *argNodo) {
     printf("Cliente conectado: %s\n", client_ip);
 
 }
+
 
 
 #endif
