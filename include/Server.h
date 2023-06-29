@@ -25,22 +25,21 @@ void *client_commands_reader(void *argController) {
             break;
         }
         
-        printf("\nRecebeu: %s - %d\n", buffer, n);
+        //printf("\nRecebeu: %s - %d\n", buffer, n);
 
         pthread_mutex_lock(&controller->mutex_buffer_comandos);
         while((strlen(controller->buffer_comandos) + n) > sizeof(controller->buffer_comandos))
         {
             printf("\nBuffer de comandos cheio\n");
-            pthread_cond_wait(&controller->buffet_cheio, &controller->mutex_buffer_comandos);
+            pthread_cond_wait(&controller->buffer_not_full, &controller->mutex_buffer_comandos);
         }
         addCommandToBuffer(controller->buffer_comandos,buffer);
-        //printf("Buffer comando: %s",controller->buffer_comandos);
+        //printf("\nBuffer comando: %s\n",controller->buffer_comandos);
+        pthread_cond_signal(&controller->buffer_not_empty);
         pthread_mutex_unlock(&controller->mutex_buffer_comandos);
         
         
-        if(strcmp(buffer,"Sair")==0){
-            break;
-        }
+
         
         const char *response = "Mensagem recebida pelo servidor\n";
         n = write(controller->nodo.client_sockfd, response, strlen(response));
