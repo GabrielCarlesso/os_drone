@@ -7,13 +7,12 @@
 #include "include/Server.h"
 #include "include/timer.h"
 #include "include/gps.h"
-
-
+#include "include/commands_handler.h"
 
 
 int main(int argc, char *argv[]) {
     
-    pthread_t server_thread, gps_thread;
+    pthread_t server_thread, gps_thread, handler_thread;
     DroneStatus drone;
     DroneController controller;
     setup_controller(&controller);
@@ -25,7 +24,7 @@ int main(int argc, char *argv[]) {
 
     pthread_create(&server_thread, NULL, client_commands_reader, (void *)&controller);
     pthread_create(&gps_thread, NULL, gps, NULL);
-    
+    pthread_create(&handler_thread, NULL, commands_handler, (void *)&controller);
 
     pthread_join(server_thread, NULL);
     close(controller.nodo.client_sockfd);

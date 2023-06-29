@@ -33,7 +33,7 @@ typedef struct {
     char buffer_comandos[BUFFER_SIZE];
     int index_buffer;
     pthread_mutex_t mutex_buffer_comandos;
-    pthread_cond_t buffet_cheio;
+    pthread_cond_t buffer_not_full, buffer_not_empty;
 
 }DroneController;
 
@@ -41,7 +41,8 @@ void setup_controller(DroneController *controller){
     
     memset(controller->buffer_comandos, 0, sizeof(controller->buffer_comandos));
     pthread_mutex_init(&controller->mutex_buffer_comandos, NULL);
-    pthread_cond_init(&controller->buffet_cheio,NULL);
+    pthread_cond_init(&controller->buffer_not_full,NULL);
+    pthread_cond_init(&controller->buffer_not_empty,NULL);
 }
 
 
