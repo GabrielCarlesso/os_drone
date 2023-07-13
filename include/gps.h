@@ -64,7 +64,8 @@ int nmea_valid_checksum(const char *message);
 int nmea_get_message_type(const char *message);
 
 
-void *gps(){
+void *gps(void *argController){
+    DroneController *controller = (DroneController *)argController; //Estrutura de controle do drone
     struct periodic_info info;      // Estrutura para tornar a thread periodica
     make_periodic (1000000, &info); // Define o periodo de 1s
 
@@ -91,7 +92,7 @@ void *gps(){
 	int device;
 
 // ABRIR SERIAL
-	device = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_SYNC);
+	device = open("/dev/ttyACM1", O_RDWR | O_NOCTTY | O_SYNC);
 //	device = open(device_name, O_RDWR | O_NOCTTY | O_NDELAY);
 //	device = open(device_name, O_RDWR | O_NOCTTY);
 
@@ -124,7 +125,7 @@ void *gps(){
 	options.c_cflag &= ~CRTSCTS;
 
 	if (tcsetattr(device, TCSANOW, &options) != 0) {
-		printf("Dispositivo GPS usb nao responde para obter informacoes da serial!");
+		printf("\nDispositivo GPS usb nao responde para obter informacoes da serial!");
 		return 0;
 	}
 
@@ -156,7 +157,7 @@ void *gps(){
 
 				// valor de satelites
 				t_satelites = t_gpgga.satellites;
-				printf("\nQuantidade de satélites: %d", t_satelites);
+				//printf("\nQuantidade de satélites: %d", t_satelites);
 
 				// calculo latitude atual
 				t_lat = (t_gpgga.latitude/100.0);
@@ -174,8 +175,16 @@ void *gps(){
 				t_long *= (t_gpgga.lon == 'W') ? -1.0 : +1.0;
 				t_long_r = (t_long * PI) / 180.0;
 
-				printf("\nDistância: %f, Latitude: %f (%f), Longitude: %f (%f), Qualidade: %d, Altitude: %f\n", 
-					dist, t_lat_r, t_lat, t_long_r, t_long, t_gpgga.quality, t_gpgga.altitude);
+                //Copia os valores obtidos do gps para a struct DroneStatus
+                pthread_mutex_lock(&controller->mutex_droneStatus);
+                controller->droneStatus.latitude = t_lat;
+                controller->droneStatus.longitude = t_long;
+                controller->droneStatus.altitude = t_gpgga.altitude;
+                
+                pthread_mutex_unlock(&controller->mutex_droneStatus);  
+
+			    //printf("\nDistância: %f, Latitude: %f (%f), Longitude: %f (%f), Qualidade: %d, Altitude: %f\n", 
+					//dist, t_lat_r, t_lat, t_long_r, t_long, t_gpgga.quality, t_gpgga.altitude);
 
 				// inicializa valores da latitude e longitude correntes
 				if ((c_lat == 0) && (t_lat != 0)) {

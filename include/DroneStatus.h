@@ -14,6 +14,7 @@
 
 typedef struct {
     int sockfd, client_sockfd;
+    pthread_mutex_t mutex_nodo;
 }Nodo;
 
 
@@ -28,21 +29,39 @@ typedef struct {
 }DroneStatus;
 
 typedef struct {
-    Nodo nodo;
 
-    char buffer_comandos[BUFFER_SIZE];
-    int index_buffer;
-    pthread_mutex_t mutex_buffer_comandos;
-    pthread_cond_t buffer_not_full, buffer_not_empty;
+    DroneStatus droneStatus;
+    pthread_mutex_t mutex_droneStatus;
+    Nodo nodo;
+    char buffer_comandos[BUFFER_SIZE], buffer_respostas[BUFFER_SIZE];
+    pthread_mutex_t mutex_buffer_comandos, mutex_buffer_respostas;
+    //int index_buffer;
+
+    pthread_cond_t cond_buffer_comandos, cond_buffer_respostas;
+
 
 }DroneController;
 
+//Inicializa os valores do controller
 void setup_controller(DroneController *controller){
-    
+    controller->droneStatus.ligado = 0; 
+    controller->droneStatus.latitude = 0; controller->droneStatus.longitude = 0; controller->droneStatus.altitude = 0; 
+    controller->droneStatus.velocidade = 0;
+    controller->droneStatus.distancia_do_inicio = 0;
+
     memset(controller->buffer_comandos, 0, sizeof(controller->buffer_comandos));
+    memset(controller->buffer_respostas, 0, sizeof(controller->buffer_respostas));
+
     pthread_mutex_init(&controller->mutex_buffer_comandos, NULL);
-    pthread_cond_init(&controller->buffer_not_full,NULL);
-    pthread_cond_init(&controller->buffer_not_empty,NULL);
+    pthread_cond_init(&controller->cond_buffer_comandos,NULL);
+
+    pthread_mutex_init(&controller->mutex_buffer_respostas, NULL);
+    pthread_cond_init(&controller->cond_buffer_respostas,NULL);
+
+    pthread_mutex_init(&controller->nodo.mutex_nodo, NULL);
+
+    pthread_mutex_init(&controller->mutex_droneStatus, NULL);
+
 }
 
 

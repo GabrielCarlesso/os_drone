@@ -8,11 +8,12 @@
 #include "include/timer.h"
 #include "include/gps.h"
 #include "include/commands_handler.h"
+#include "include/verifica_posicao.h"
 
 
 int main(int argc, char *argv[]) {
     
-    pthread_t server_thread, gps_thread, handler_thread;
+    pthread_t server_thread, gps_thread, handler_thread, verifica_thread;
     DroneStatus drone;
     DroneController controller;
     setup_controller(&controller);
@@ -23,8 +24,9 @@ int main(int argc, char *argv[]) {
     initiateServer(argc, argv, &controller.nodo);  
 
     pthread_create(&server_thread, NULL, client_commands_reader, (void *)&controller);
-    pthread_create(&gps_thread, NULL, gps, NULL);
+    pthread_create(&gps_thread, NULL, gps, (void *)&controller);
     pthread_create(&handler_thread, NULL, commands_handler, (void *)&controller);
+    pthread_create(&verifica_thread, NULL, verifica_posicao , (void *)&controller);
 
     pthread_join(server_thread, NULL);
     close(controller.nodo.client_sockfd);

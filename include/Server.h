@@ -13,40 +13,56 @@
 
 void *client_commands_reader(void *argController) {
     DroneController *controller = (DroneController *)argController;
-    //Nodo *nodo = (Nodo *)argNodo;
     int n;
     char buffer[256];
     
     
     while (1) {
+        
         bzero(buffer, sizeof(buffer));
+        pthread_mutex_lock(&controller->nodo.mutex_nodo);
         n = read(controller->nodo.client_sockfd, buffer, sizeof(buffer) - 1);
         if (n <= 0) {// Erro ou cliente fechou a conexão, encerrar thread
             break;
         }
-        
-        //printf("\nRecebeu: %s - %d\n", buffer, n);
+        pthread_mutex_unlock(&controller->nodo.mutex_nodo);
 
+        //Coloca as mensagens recebidas do cliente no buffer de comandos
         pthread_mutex_lock(&controller->mutex_buffer_comandos);
-        while((strlen(controller->buffer_comandos) + n) > sizeof(controller->buffer_comandos))
+        while((strlen(controller->buffer_comandos) + strlen(buffer)) > (BUFFER_SIZE - 1))
         {
             printf("\nBuffer de comandos cheio\n");
-            pthread_cond_wait(&controller->buffer_not_full, &controller->mutex_buffer_comandos);
+            pthread_cond_wait(&controller->cond_buffer_comandos, &controller->mutex_buffer_comandos);
         }
         addCommandToBuffer(controller->buffer_comandos,buffer);
         //printf("\nBuffer comando: %s\n",controller->buffer_comandos);
-        pthread_cond_signal(&controller->buffer_not_empty);
+        pthread_cond_signal(&controller->cond_buffer_comandos);
         pthread_mutex_unlock(&controller->mutex_buffer_comandos);
         
         
+    //Pega a resposta do buffer
+    pthread_mutex_lock(&controller->mutex_buffer_respostas);    //Lock para usar o buffer de respsota
+    while((strlen(controller->buffer_respostas) == 0))         // Fica travado quando o buffer ta vazio
+    {
+        //printf("\nBuffer de resposta vazio\n");
+        pthread_cond_wait(&controller->cond_buffer_respostas, &controller->mutex_buffer_respostas);
+    }
 
+    char* response = getFirstCommandFromBuffer(controller->buffer_respostas);
+    printf("\nMensagem retirada do buffer: %s", response);
+
+    pthread_cond_signal(&controller->cond_buffer_respostas);
+    pthread_mutex_unlock(&controller->mutex_buffer_respostas);
+    pthread_mutex_lock(&controller->nodo.mutex_nodo);
+    //Envia a resposta
+    n = write(controller->nodo.client_sockfd, response, strlen(response));
+    if (n <= 0) {
+        printf("Erro ao escrever no socket!\n");
+    }
+    pthread_mutex_unlock(&controller->nodo.mutex_nodo);
+    printf("\nEnviada a Mensagem: %s",response);
         
-        const char *response = "Mensagem recebida pelo servidor\n";
-        n = write(controller->nodo.client_sockfd, response, strlen(response));
-        if (n <= 0) {
-            printf("Erro ao escrever no socket!\n");
-            break;
-        }
+        
     }
     
     pthread_exit(NULL);
@@ -70,6 +86,7 @@ void initiateServer(int argc, char *argv[], Nodo *argNodo) {
         printf("Erro abrindo o socket!\n");
         exit(1);
     }
+
     bzero((char *) &serv_addr, sizeof(serv_addr));
     portno = atoi(argv[1]);
     serv_addr.sin_family = AF_INET;
