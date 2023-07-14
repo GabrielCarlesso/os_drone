@@ -99,7 +99,7 @@ void *gps(void *argController){
 	memset(&options, 0, sizeof(options));
 
 	if (tcgetattr(device, &options) != 0) {
-		printf("Dispositivo GPS usb nao responde para obter informacoes da serial!");
+		printf("\nDispositivo GPS usb nao responde para obter informacoes da serial!");
 		return 0;
 	}
 
@@ -175,14 +175,15 @@ void *gps(void *argController){
 				t_long *= (t_gpgga.lon == 'W') ? -1.0 : +1.0;
 				t_long_r = (t_long * PI) / 180.0;
 
-                //Copia os valores obtidos do gps para a struct DroneStatus
+                //Copia os valores obtidos do gps para a struct DroneStatus se tiver satelites
+                if(t_satelites > 0){          
                 pthread_mutex_lock(&controller->mutex_droneStatus);
                 controller->droneStatus.latitude = t_lat;
                 controller->droneStatus.longitude = t_long;
                 controller->droneStatus.altitude = t_gpgga.altitude;
-                
+                controller->droneStatus.distancia_do_inicio = dist;
                 pthread_mutex_unlock(&controller->mutex_droneStatus);  
-
+                }
 			    //printf("\nDistância: %f, Latitude: %f (%f), Longitude: %f (%f), Qualidade: %d, Altitude: %f\n", 
 					//dist, t_lat_r, t_lat, t_long_r, t_long, t_gpgga.quality, t_gpgga.altitude);
 

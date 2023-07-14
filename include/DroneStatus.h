@@ -20,7 +20,7 @@ typedef struct {
 
 typedef struct {
 
-    int ligado;
+    int ligado, satelites;
     double latitude, longitude, altitude;
     double velocidade;
     double distancia_do_inicio;
@@ -35,16 +35,16 @@ typedef struct {
     Nodo nodo;
     char buffer_comandos[BUFFER_SIZE], buffer_respostas[BUFFER_SIZE];
     pthread_mutex_t mutex_buffer_comandos, mutex_buffer_respostas;
-    //int index_buffer;
-
     pthread_cond_t cond_buffer_comandos, cond_buffer_respostas;
 
+    pthread_cond_t cond_mensagem_pendente;
+    int mensagem_pendente;
 
 }DroneController;
 
 //Inicializa os valores do controller
 void setup_controller(DroneController *controller){
-    controller->droneStatus.ligado = 0; 
+    controller->droneStatus.ligado = 0; controller->droneStatus.satelites = 0;
     controller->droneStatus.latitude = 0; controller->droneStatus.longitude = 0; controller->droneStatus.altitude = 0; 
     controller->droneStatus.velocidade = 0;
     controller->droneStatus.distancia_do_inicio = 0;
@@ -61,6 +61,9 @@ void setup_controller(DroneController *controller){
     pthread_mutex_init(&controller->nodo.mutex_nodo, NULL);
 
     pthread_mutex_init(&controller->mutex_droneStatus, NULL);
+
+    pthread_cond_init(&controller->cond_mensagem_pendente,NULL);
+    controller->mensagem_pendente = 0;
 
 }
 

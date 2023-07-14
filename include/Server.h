@@ -20,13 +20,12 @@ void *client_commands_reader(void *argController) {
     while (1) {
         
         bzero(buffer, sizeof(buffer));
-        pthread_mutex_lock(&controller->nodo.mutex_nodo);
+        
         n = read(controller->nodo.client_sockfd, buffer, sizeof(buffer) - 1);
         if (n <= 0) {// Erro ou cliente fechou a conexão, encerrar thread
             break;
         }
-        pthread_mutex_unlock(&controller->nodo.mutex_nodo);
-
+        
         //Coloca as mensagens recebidas do cliente no buffer de comandos
         pthread_mutex_lock(&controller->mutex_buffer_comandos);
         while((strlen(controller->buffer_comandos) + strlen(buffer)) > (BUFFER_SIZE - 1))
@@ -39,35 +38,59 @@ void *client_commands_reader(void *argController) {
         pthread_cond_signal(&controller->cond_buffer_comandos);
         pthread_mutex_unlock(&controller->mutex_buffer_comandos);
         
-        
-    //Pega a resposta do buffer
-    pthread_mutex_lock(&controller->mutex_buffer_respostas);    //Lock para usar o buffer de respsota
-    while((strlen(controller->buffer_respostas) == 0))         // Fica travado quando o buffer ta vazio
-    {
-        //printf("\nBuffer de resposta vazio\n");
-        pthread_cond_wait(&controller->cond_buffer_respostas, &controller->mutex_buffer_respostas);
-    }
+        //Pega a resposta do buffer
+        pthread_mutex_lock(&controller->mutex_buffer_respostas);    //Lock para usar o buffer de respsota
+        while((strlen(controller->buffer_respostas) == 0))         // Fica travado quando o buffer ta vazio
+        {
+            //printf("\nBuffer de resposta vazio\n");
+            pthread_cond_wait(&controller->cond_buffer_respostas, &controller->mutex_buffer_respostas);
+        }
 
-    char* response = getFirstCommandFromBuffer(controller->buffer_respostas);
-    printf("\nMensagem retirada do buffer: %s", response);
+        char* response = getFirstCommandFromBuffer(controller->buffer_respostas);
+        //printf("\nMensagem retirada do buffer: %s", response);
 
-    pthread_cond_signal(&controller->cond_buffer_respostas);
-    pthread_mutex_unlock(&controller->mutex_buffer_respostas);
-    pthread_mutex_lock(&controller->nodo.mutex_nodo);
-    //Envia a resposta
-    n = write(controller->nodo.client_sockfd, response, strlen(response));
-    if (n <= 0) {
-        printf("Erro ao escrever no socket!\n");
-    }
-    pthread_mutex_unlock(&controller->nodo.mutex_nodo);
-    printf("\nEnviada a Mensagem: %s",response);
+        pthread_cond_signal(&controller->cond_buffer_respostas);
+        pthread_mutex_unlock(&controller->mutex_buffer_respostas);
+        pthread_mutex_lock(&controller->nodo.mutex_nodo);
+        //Envia a resposta
+        n = write(controller->nodo.client_sockfd, response, strlen(response));
+        if (n <= 0) {
+            printf("Erro ao escrever no socket!\n");
+        }
+        pthread_mutex_unlock(&controller->nodo.mutex_nodo);
+        printf("\nResposta ao client: %s",response);
         
-        
+    
     }
     
     pthread_exit(NULL);
 }
 
+/*
+void sender_client(void *argController) {
+    DroneController *controller = (DroneController *)argController;
+    int n;
+    char buffer[256];
+
+
+    while (1)
+    {
+        char* response = getFirstCommandFromBuffer(controller->buffer_respostas);
+        //printf("\nMensagem retirada do buffer: %s", response);
+
+        pthread_cond_signal(&controller->cond_buffer_respostas);
+        pthread_mutex_unlock(&controller->mutex_buffer_respostas);
+        pthread_mutex_lock(&controller->nodo.mutex_nodo);
+        //Envia a resposta
+        n = write(controller->nodo.client_sockfd, response, strlen(response));
+        if (n <= 0) {
+            printf("Erro ao escrever no socket!\n");
+        }
+        pthread_mutex_unlock(&controller->nodo.mutex_nodo);
+        printf("\nResposta ao client: %s",response);
+    }
+}
+*/
 
 void initiateServer(int argc, char *argv[], Nodo *argNodo) {
     

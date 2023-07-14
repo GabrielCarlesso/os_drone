@@ -1,7 +1,15 @@
 import 'dart:io';
 
-void main() {
-  Socket.connect('localhost', 8082).then((socket) {
+void main(List<String> arguments) {
+int port = 0;
+  if (arguments.length > 0) {
+	port = int.parse(arguments[0]);
+  } else {
+    print('Nenhum argumento foi passado.');
+    return;
+  }
+  
+  Socket.connect('localhost', port).then((socket) {
     print('Conectado ao servidor.');
 
     socket.listen(
